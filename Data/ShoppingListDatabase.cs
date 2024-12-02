@@ -1,11 +1,8 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SQLite;
+﻿using SQLite;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using DanAlexiaLab7.Models;
+using System.Collections;
 
 namespace DanAlexiaLab7.Data
 {
@@ -16,17 +13,20 @@ namespace DanAlexiaLab7.Data
         {
             _database = new SQLiteAsyncConnection(dbPath);
             _database.CreateTableAsync<ShopList>().Wait();
+            _database.CreateTableAsync<Product>().Wait();
+            _database.CreateTableAsync<ListProduct>().Wait();
         }
+
         public Task<List<ShopList>> GetShopListsAsync()
         {
             return _database.Table<ShopList>().ToListAsync();
         }
+
         public Task<ShopList> GetShopListAsync(int id)
         {
-            return _database.Table<ShopList>()
-            .Where(i => i.ID == id)
-           .FirstOrDefaultAsync();
+            return _database.Table<ShopList>().Where(i => i.ID == id).FirstOrDefaultAsync();
         }
+
         public Task<int> SaveShopListAsync(ShopList slist)
         {
             if (slist.ID != 0)
@@ -43,6 +43,48 @@ namespace DanAlexiaLab7.Data
             return _database.DeleteAsync(slist);
         }
 
-    }
+        public Task<int> SaveProductAsync(Product product)
+        {
+            if (product.ID != 0)
+            {
+                return _database.UpdateAsync(product);
+            }
+            else
+            {
+                return _database.InsertAsync(product);
+            }
+        }
 
+        public Task<int> DeleteProductAsync(Product product)
+        {
+            return _database.DeleteAsync(product);
+        }
+
+        public Task<List<Product>> GetProductsAsync()
+        {
+            return _database.Table<Product>().ToListAsync();
+        }
+
+        internal async Task SaveListProductAsync(ListProduct listProduct)
+        {
+            if (listProduct.ID != 0)
+            {
+                await _database.UpdateAsync(listProduct);
+            }
+            else
+            {
+                await _database.InsertAsync(listProduct);
+            }
+        }
+
+        internal async Task<IEnumerable<Product>> GetListProductsAsync(int shopListId)
+        {
+            return await _database.QueryAsync<Product>(
+                "SELECT P.ID, P.Description " +
+                "FROM Product P " +
+                "INNER JOIN ListProduct LP ON P.ID = LP.ProductID " +
+                "WHERE LP.ShopListID = ?",
+                shopListId);
+        }
+    }
 }
