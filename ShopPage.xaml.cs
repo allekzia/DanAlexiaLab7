@@ -27,7 +27,7 @@ public partial class ShopPage : ContentPage
 
         var myLocation = new Location(46.7731796289, 23.6213886738);        
         
-        var distance = myLocation.CalculateDistance(myLocation, DistanceUnits.Kilometers); 
+        var distance = myLocation.CalculateDistance(shoplocation, DistanceUnits.Kilometers); 
         
         if (distance < 5) 
         { 
