@@ -1,8 +1,11 @@
-﻿using SQLite;
+﻿using System;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using SQLite;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using DanAlexiaLab7.Models;
-using System.Collections;
 
 namespace DanAlexiaLab7.Data
 {
@@ -15,18 +18,39 @@ namespace DanAlexiaLab7.Data
             _database.CreateTableAsync<ShopList>().Wait();
             _database.CreateTableAsync<Product>().Wait();
             _database.CreateTableAsync<ListProduct>().Wait();
+            _database.CreateTableAsync<Shop>().Wait();
+        }
+
+        public Task<int> SaveProductAsync(Product product)
+        {
+            if (product.ID != 0)
+            {
+                return _database.UpdateAsync(product);
+            }
+            else
+            {
+                return _database.InsertAsync(product);
+            }
+        }
+        public Task<int> DeleteProductAsync(Product product)
+        {
+            return _database.DeleteAsync(product);
+        }
+        public Task<List<Product>> GetProductsAsync()
+        {
+            return _database.Table<Product>().ToListAsync();
         }
 
         public Task<List<ShopList>> GetShopListsAsync()
         {
             return _database.Table<ShopList>().ToListAsync();
         }
-
         public Task<ShopList> GetShopListAsync(int id)
         {
-            return _database.Table<ShopList>().Where(i => i.ID == id).FirstOrDefaultAsync();
+            return _database.Table<ShopList>()
+            .Where(i => i.ID == id)
+           .FirstOrDefaultAsync();
         }
-
         public Task<int> SaveShopListAsync(ShopList slist)
         {
             if (slist.ID != 0)
@@ -42,49 +66,50 @@ namespace DanAlexiaLab7.Data
         {
             return _database.DeleteAsync(slist);
         }
-
-        public Task<int> SaveProductAsync(Product product)
+        public Task<int> SaveListProductAsync(ListProduct listp)
         {
-            if (product.ID != 0)
+            if (listp.ID != 0)
             {
-                return _database.UpdateAsync(product);
+                return _database.UpdateAsync(listp);
             }
             else
             {
-                return _database.InsertAsync(product);
+                return _database.InsertAsync(listp);
             }
         }
-
-        public Task<int> DeleteProductAsync(Product product)
+        public Task<List<Product>> GetListProductsAsync(int shoplistid)
         {
-            return _database.DeleteAsync(product);
+            return _database.QueryAsync<Product>(
+            "select P.ID, P.Description from Product P"
+            + " inner join ListProduct LP"
+            + " on P.ID = LP.ProductID where LP.ShopListID = ?",
+            shoplistid);
         }
-
-        public Task<List<Product>> GetProductsAsync()
+        public Task<int> DeleteListProductAsync(ListProduct listProduct)
         {
-            return _database.Table<Product>().ToListAsync();
+            return _database.ExecuteAsync("DELETE FROM ListProduct WHERE ShopListID = ? AND ProductID = ?", listProduct.ShopListID, listProduct.ProductID);
         }
-
-        internal async Task SaveListProductAsync(ListProduct listProduct)
+        public Task<List<Shop>> GetShopsAsync()
         {
-            if (listProduct.ID != 0)
+            return _database.Table<Shop>().ToListAsync();
+        }
+        public Task<int> SaveShopAsync(Shop shop)
+        {
+            if (shop.ID != 0)
             {
-                await _database.UpdateAsync(listProduct);
+                return _database.UpdateAsync(shop);
             }
             else
             {
-                await _database.InsertAsync(listProduct);
+                return _database.InsertAsync(shop);
             }
         }
 
-        internal async Task<IEnumerable<Product>> GetListProductsAsync(int shopListId)
+        public Task<int> DeleteShopAsync(Shop shop)
         {
-            return await _database.QueryAsync<Product>(
-                "SELECT P.ID, P.Description " +
-                "FROM Product P " +
-                "INNER JOIN ListProduct LP ON P.ID = LP.ProductID " +
-                "WHERE LP.ShopListID = ?",
-                shopListId);
+            return _database.DeleteAsync(shop);
         }
+
     }
+
 }
